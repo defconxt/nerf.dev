@@ -1,0 +1,5 @@
+.DS_Store
+.bg-shell/
+.gsd/
+node_modules/
+.vercel/

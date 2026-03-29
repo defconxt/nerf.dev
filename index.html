@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nerf.dev</title>
+
+<!-- SEO & Social -->
+<meta name="description" content="New Experimental Research Foundation — something is being built here.">
+<meta name="theme-color" content="#0a0a10">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nerf.dev">
+<meta property="og:title" content="nerf.dev">
+<meta property="og:description" content="New Experimental Research Foundation — something is being built here.">
+<meta property="og:image" content="https://nerf.dev/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="nerf.dev">
+<meta name="twitter:description" content="New Experimental Research Foundation — something is being built here.">
+
+<!-- Inline SVG Favicon -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='12' width='100' height='100' fill='%230a0a10'/><text x='12' y='76' font-size='72' font-family='monospace' fill='%2300f0ff'>%3E_</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a10;
+    --surface: #0e0e18;
+    --border: #1a1a2e;
+    --text: #e0e0f0;
+    --dim: #4a4a6a;
+    --cyan: #00f0ff;
+    --cyan-glow: rgba(0, 240, 255, 0.15);
+    --magenta: #ff2d7b;
+    --magenta-glow: rgba(255, 45, 123, 0.15);
+    --purple: #b44aff;
+    --purple-glow: rgba(180, 74, 255, 0.15);
+    --orange: #ff8a2b;
+    --orange-glow: rgba(255, 138, 43, 0.15);
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* noise texture overlay */
+  .noise {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* subtle grid bg */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  /* particle canvas */
+  #particles {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .container {
+    position: relative;
+    z-index: 10;
+    text-align: left;
+    max-width: 520px;
+    padding: 2rem;
+  }
+
+  /* ── prompt with typing ── */
+  .prompt {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards 0.2s;
+  }
+
+  .prompt-symbol {
+    color: var(--purple);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .prompt-path {
+    color: var(--dim);
+    font-size: 0.85rem;
+    font-weight: 300;
+    overflow: hidden;
+    border-right: none;
+  }
+
+  .prompt-path .typed {
+    display: inline;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1.1em;
+    background: var(--cyan);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+
+  /* ── domain with glitch ── */
+  .domain {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards 1.4s;
+    position: relative;
+    cursor: default;
+  }
+
+  .domain .tld { color: var(--cyan); }
+
+  .domain:hover {
+    animation: fadeIn 0.6s ease forwards 0s, glitch 0.3s linear;
+  }
+
+  @keyframes glitch {
+    0%   { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); transform: translate(0); }
+    20%  { text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan); transform: translate(-2px, 1px); }
+    40%  { text-shadow: 3px 0 var(--magenta), -3px 0 var(--cyan); transform: translate(2px, -1px); }
+    60%  { text-shadow: -1px 0 var(--magenta), 1px 0 var(--cyan); transform: translate(1px, 1px); }
+    80%  { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); transform: translate(-1px, -1px); }
+    100% { text-shadow: none; transform: translate(0); }
+  }
+
+  /* periodic subtle glitch */
+  .domain.auto-glitch {
+    animation: fadeIn 0.6s ease forwards 0s, glitchSubtle 0.15s linear;
+  }
+
+  @keyframes glitchSubtle {
+    0%   { text-shadow: 1px 0 var(--magenta), -1px 0 var(--cyan); }
+    50%  { text-shadow: -1px 0 var(--magenta), 1px 0 var(--cyan); transform: translate(1px, 0); }
+    100% { text-shadow: none; transform: translate(0); }
+  }
+
+  .acronym {
+    color: var(--dim);
+    font-size: 0.85rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards 1.6s;
+  }
+
+  .acronym .letter {
+    color: var(--magenta);
+    font-weight: 700;
+  }
+
+  .tagline {
+    color: var(--dim);
+    font-size: 0.75rem;
+    font-weight: 300;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards 1.8s;
+  }
+
+  /* ── status block ── */
+  .status-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards 2s;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .status-row + .status-row { margin-top: 0.6rem; }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot.live {
+    background: var(--purple);
+    box-shadow: 0 0 8px var(--purple);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .status-dot.active {
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan-glow);
+    animation: pulse 2.5s ease-in-out infinite 0.5s;
+  }
+
+  .status-dot.pending {
+    background: var(--orange);
+    box-shadow: 0 0 8px var(--orange-glow);
+  }
+
+  .status-dot.classified {
+    background: var(--magenta);
+    box-shadow: 0 0 8px var(--magenta-glow);
+    animation: pulse 3s ease-in-out infinite 1s;
+  }
+
+  .status-label { color: var(--dim); }
+
+  .status-value {
+    margin-left: auto;
+    font-weight: 500;
+  }
+
+  .status-value.cyan    { color: var(--cyan); }
+  .status-value.orange  { color: var(--orange); }
+  .status-value.magenta { color: var(--magenta); }
+  .status-value.purple  { color: var(--purple); }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.7rem 0;
+    opacity: 0.5;
+  }
+
+  /* ── links ── */
+  .links {
+    display: flex;
+    gap: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards 2.2s;
+  }
+
+  .links a {
+    color: var(--dim);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 400;
+    transition: color 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .links a svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  .links a::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--magenta);
+    transition: width 0.3s ease;
+  }
+
+  .links a:hover { color: var(--text); }
+  .links a:hover::after { width: 100%; }
+
+  /* ── konami flash ── */
+  .konami-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .konami-flash.fire {
+    animation: konamiFlash 1.5s ease-out forwards;
+  }
+
+  @keyframes konamiFlash {
+    0%   { opacity: 1; background: var(--cyan); }
+    10%  { background: var(--magenta); }
+    20%  { background: var(--purple); }
+    30%  { opacity: 0.6; background: var(--cyan); }
+    100% { opacity: 0; }
+  }
+
+  .nerf-text {
+    position: fixed;
+    z-index: 201;
+    pointer-events: none;
+    font-size: clamp(4rem, 20vw, 12rem);
+    font-weight: 700;
+    color: var(--cyan);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+    text-shadow: 0 0 40px var(--cyan), 0 0 80px var(--magenta);
+    letter-spacing: 0.1em;
+  }
+
+  .nerf-text.fire {
+    animation: nerfPop 1.5s ease-out forwards;
+  }
+
+  @keyframes nerfPop {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    30%  { transform: translate(-50%, -50%) scale(1); }
+    70%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); }
+  }
+
+  /* ── corner accents ── */
+  .corner {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    z-index: 10;
+    opacity: 0.2;
+  }
+
+  .corner::before, .corner::after {
+    content: '';
+    position: absolute;
+    background: var(--cyan);
+  }
+
+  .corner.tl { top: 24px; left: 24px; }
+  .corner.tl::before { width: 1px; height: 40px; top: 0; left: 0; }
+  .corner.tl::after  { width: 40px; height: 1px; top: 0; left: 0; }
+
+  .corner.tr { top: 24px; right: 24px; }
+  .corner.tr::before { width: 1px; height: 40px; top: 0; right: 0; }
+  .corner.tr::after  { width: 40px; height: 1px; top: 0; right: 0; }
+
+  .corner.bl { bottom: 24px; left: 24px; }
+  .corner.bl::before { width: 1px; height: 40px; bottom: 0; left: 0; }
+  .corner.bl::after  { width: 40px; height: 1px; bottom: 0; left: 0; }
+
+  .corner.br { bottom: 24px; right: 24px; }
+  .corner.br::before { width: 1px; height: 40px; bottom: 0; right: 0; }
+  .corner.br::after  { width: 40px; height: 1px; bottom: 0; right: 0; }
+
+  /* ── keyframes ── */
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* mobile adjustments */
+  @media (max-width: 480px) {
+    .container { padding: 1.5rem; }
+    .status-block { padding: 1rem 1.25rem; }
+    .links { gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+<canvas id="particles"></canvas>
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div class="konami-flash" id="konamiFlash"></div>
+<div class="nerf-text" id="nerfText">NERF'D</div>
+
+<div class="container">
+  <div class="prompt">
+    <span class="prompt-symbol">></span>
+    <span class="prompt-path"><span class="typed" id="typed"></span><span class="cursor"></span></span>
+  </div>
+
+  <div class="domain" id="domain">nerf<span class="tld">.dev</span></div>
+  <p class="acronym"><span class="letter">N</span>ew <span class="letter">E</span>xperimental <span class="letter">R</span>esearch <span class="letter">F</span>oundation</p>
+  <p class="tagline">something is being built here.</p>
+
+  <div class="status-block">
+    <div class="status-row">
+      <span class="status-dot live"></span>
+      <span class="status-label">status</span>
+      <span class="status-value cyan">secured</span>
+    </div>
+    <div class="status-row">
+      <span class="status-dot pending"></span>
+      <span class="status-label">deploy</span>
+      <span class="status-value orange">pending</span>
+    </div>
+    <div class="divider"></div>
+    <div class="status-row">
+      <span class="status-dot active"></span>
+      <span class="status-label">uplink</span>
+      <span class="status-value cyan">active</span>
+    </div>
+    <div class="status-row">
+      <span class="status-dot classified"></span>
+      <span class="status-label">origin</span>
+      <span class="status-value magenta">classified</span>
+    </div>
+  </div>
+
+  <div class="links">
+    <a href="https://github.com/defconxt/nerf.dev" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      github
+    </a>
+    <a href="mailto:hello@nerf.dev">
+      <svg viewBox="0 0 16 16"><path d="M1.5 3h13c.28 0 .5.22.5.5v.5L8 8 .5 4v-.5c0-.28.22-.5.5-.5zM.5 5.5L8 9.5l7.5-4v7c0 .28-.22.5-.5.5h-13c-.28 0-.5-.22-.5-.5v-7z"/></svg>
+      contact
+    </a>
+  </div>
+</div>
+
+<script>
+// ── Typing animation ──
+(() => {
+  const el = document.getElementById('typed');
+  const text = '~/nerf';
+  let i = 0;
+  setTimeout(() => {
+    const interval = setInterval(() => {
+      el.textContent += text[i];
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, 80);
+  }, 400);
+})();
+
+// ── Periodic glitch on domain ──
+(() => {
+  const domain = document.getElementById('domain');
+  const fire = () => {
+    domain.classList.add('auto-glitch');
+    setTimeout(() => domain.classList.remove('auto-glitch'), 200);
+  };
+  // random interval between 4-10 seconds
+  const schedule = () => setTimeout(() => { fire(); schedule(); }, 4000 + Math.random() * 6000);
+  setTimeout(schedule, 3000);
+})();
+
+// ── Floating particles ──
+(() => {
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles;
+
+  const resize = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  };
+
+  const init = () => {
+    resize();
+    const count = Math.min(Math.floor((w * h) / 18000), 80);
+    particles = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: -Math.random() * 0.4 - 0.1,
+      r: Math.random() * 1.5 + 0.5,
+      o: Math.random() * 0.3 + 0.05,
+      color: ['0,240,255', '180,74,255', '255,45,123'][Math.floor(Math.random() * 3)]
+    }));
+  };
+
+  const draw = () => {
+    ctx.clearRect(0, 0, w, h);
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y < -10) { p.y = h + 10; p.x = Math.random() * w; }
+      if (p.x < -10) p.x = w + 10;
+      if (p.x > w + 10) p.x = -10;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${p.o})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  };
+
+  init();
+  draw();
+  window.addEventListener('resize', () => { resize(); init(); });
+})();
+
+// ── Easter eggs: Konami code + typing "nerf" ──
+(() => {
+  const flash = document.getElementById('konamiFlash');
+  const nerfText = document.getElementById('nerfText');
+
+  const fireEasterEgg = () => {
+    flash.classList.remove('fire');
+    nerfText.classList.remove('fire');
+    void flash.offsetWidth; // reflow
+    flash.classList.add('fire');
+    nerfText.classList.add('fire');
+    setTimeout(() => {
+      flash.classList.remove('fire');
+      nerfText.classList.remove('fire');
+    }, 1600);
+  };
+
+  // Konami: ↑↑↓↓←→←→BA
+  const konami = [38,38,40,40,37,39,37,39,66,65];
+  let ki = 0;
+
+  // Typing "nerf"
+  const nerfSeq = ['n','e','r','f'];
+  let ni = 0;
+
+  document.addEventListener('keydown', (e) => {
+    // konami
+    if (e.keyCode === konami[ki]) { ki++; if (ki === konami.length) { ki = 0; fireEasterEgg(); } }
+    else { ki = 0; }
+
+    // nerf sequence
+    if (e.key.toLowerCase() === nerfSeq[ni]) { ni++; if (ni === nerfSeq.length) { ni = 0; fireEasterEgg(); } }
+    else { ni = 0; }
+  });
+})();
+</script>
+
+</body>
+</html>
