@@ -107,7 +107,7 @@
   .container {
     position: relative;
     z-index: 10;
-    text-align: left;
+    text-align: center;
     max-width: 520px;
     padding: 2rem;
   }
@@ -116,6 +116,7 @@
   .prompt {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     margin-bottom: 2rem;
     opacity: 0;
@@ -208,7 +209,7 @@
     color: var(--dim);
     font-size: 0.75rem;
     font-weight: 300;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     opacity: 0;
     animation: fadeIn 0.6s ease forwards 1.8s;
   }
@@ -218,8 +219,8 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 2rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
     opacity: 0;
     animation: fadeIn 0.6s ease forwards 2s;
   }
@@ -285,43 +286,69 @@
   /* ── links ── */
   .links {
     display: flex;
+    justify-content: center;
     gap: 1.5rem;
     opacity: 0;
-    animation: fadeIn 0.6s ease forwards 2.2s;
+    animation: fadeIn 0.6s ease forwards 2.8s;
   }
 
   .links a {
-    color: var(--dim);
+    color: var(--purple);
     text-decoration: none;
     font-size: 0.8rem;
     font-weight: 400;
-    transition: color 0.2s ease;
-    position: relative;
-    display: flex;
+    transition: color 0.2s ease, opacity 0.2s ease;
+    display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+    opacity: 0.75;
   }
 
   .links a svg {
-    width: 14px;
-    height: 14px;
-    fill: currentColor;
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
     flex-shrink: 0;
   }
 
-  .links a::after {
-    content: '';
-    position: absolute;
-    bottom: -3px;
-    left: 0;
-    width: 0;
-    height: 1px;
-    background: var(--magenta);
-    transition: width 0.3s ease;
+  .links a:hover {
+    color: var(--purple);
+    opacity: 1;
   }
 
-  .links a:hover { color: var(--text); }
-  .links a:hover::after { width: 100%; }
+  /* ── CTA button ── */
+  .cta-link {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards 2.4s;
+    position: relative;
+  }
+
+  .cta-btn {
+    display: block;
+    max-width: 360px;
+    width: 100%;
+    height: auto;
+    transition: transform 0.25s ease, filter 0.25s ease;
+    filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.2)) drop-shadow(0 0 24px rgba(180, 74, 255, 0.1));
+    cursor: pointer;
+  }
+
+  .cta-link:hover .cta-btn {
+    transform: scale(1.04) translateX(4px);
+    filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.4)) drop-shadow(0 0 40px rgba(180, 74, 255, 0.25));
+  }
+
+  .cta-link:active .cta-btn {
+    transform: scale(0.98);
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.3)) drop-shadow(0 0 16px rgba(180, 74, 255, 0.15));
+  }
+
+  @media (max-width: 480px) {
+    .cta-btn { max-width: 280px; }
+  }
 
   /* ── konami flash ── */
   .konami-flash {
@@ -456,9 +483,9 @@
       <span class="status-value cyan">secured</span>
     </div>
     <div class="status-row">
-      <span class="status-dot pending"></span>
+      <span class="status-dot active"></span>
       <span class="status-label">deploy</span>
-      <span class="status-value orange">pending</span>
+      <span class="status-value cyan">live</span>
     </div>
     <div class="divider"></div>
     <div class="status-row">
@@ -473,14 +500,22 @@
     </div>
   </div>
 
+  <a href="https://blacktemple.net/nerf" class="cta-link" id="ctaLink">
+    <img src="enter-lab-btn.png" alt="Enter the Lab →" class="cta-btn" draggable="false">
+  </a>
+
   <div class="links">
     <a href="https://github.com/defconxt/nerf.dev" target="_blank" rel="noopener">
-      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      github
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      nerf.dev
+    </a>
+    <a href="https://github.com/defconxt/nerf" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      nerf
     </a>
     <a href="mailto:hello@nerf.dev" rel="noopener noreferrer">
-      <svg viewBox="0 0 16 16"><path d="M1.5 3h13c.28 0 .5.22.5.5v.5L8 8 .5 4v-.5c0-.28.22-.5.5-.5zM.5 5.5L8 9.5l7.5-4v7c0 .28-.22.5-.5.5h-13c-.28 0-.5-.22-.5-.5v-7z"/></svg>
-      contact
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      Contact
     </a>
   </div>
 </div>
