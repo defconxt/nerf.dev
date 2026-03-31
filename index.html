@@ -289,7 +289,7 @@
     justify-content: center;
     gap: 1.5rem;
     opacity: 0;
-    animation: fadeIn 0.6s ease forwards 2.8s;
+    animation: fadeIn 0.6s ease forwards 3s;
   }
 
   .links a {
@@ -317,12 +317,75 @@
     opacity: 1;
   }
 
+  /* ── install block ── */
+  .install-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards 2.2s;
+    text-align: left;
+    position: relative;
+  }
+
+  .install-label {
+    font-size: 0.65rem;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+
+  .install-cmd {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .install-cmd .dollar {
+    color: var(--purple);
+    font-weight: 700;
+    user-select: none;
+  }
+
+  .install-cmd code {
+    color: var(--cyan);
+    font-weight: 400;
+    flex: 1;
+  }
+
+  .install-copy {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--dim);
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .install-copy:hover {
+    color: var(--cyan);
+    border-color: var(--cyan);
+  }
+
+  .install-copy.copied {
+    color: var(--cyan);
+    border-color: var(--cyan);
+  }
+
   /* ── CTA button ── */
   .cta-link {
     display: inline-block;
     margin-bottom: 1.5rem;
     opacity: 0;
-    animation: fadeIn 0.6s ease forwards 2.4s;
+    animation: fadeIn 0.6s ease forwards 2.6s;
     position: relative;
   }
 
@@ -504,6 +567,15 @@
     <img src="enter-lab-btn.png" alt="Enter the Lab →" class="cta-btn" draggable="false">
   </a>
 
+  <div class="install-block">
+    <div class="install-label">install</div>
+    <div class="install-cmd">
+      <span class="dollar">$</span>
+      <code>npm install -g @defconxt/nerf</code>
+      <button class="install-copy" id="copyBtn" onclick="copyInstall()">copy</button>
+    </div>
+  </div>
+
   <div class="links">
     <a href="https://github.com/defconxt/nerf.dev" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
@@ -521,6 +593,16 @@
 </div>
 
 <script>
+// ── Copy install command ──
+function copyInstall() {
+  navigator.clipboard.writeText('npm install -g @defconxt/nerf').then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
 // ── Typing animation ──
 (() => {
   const el = document.getElementById('typed');
